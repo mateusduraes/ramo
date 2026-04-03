@@ -1,5 +1,9 @@
 # Ramo
 
+<p align="center">
+  <img src=".github/assets/logo.png" alt="Ramo" width="200" />
+</p>
+
 A Git worktree manager CLI with [cmux](https://github.com/manaflow-ai/cmux) workspace integration.
 
 Ramo automates the creation and management of Git worktrees — isolated working copies of your repository. It pairs with cmux to automatically set up terminal workspaces with configured panes and commands for each worktree.
