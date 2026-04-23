@@ -8,6 +8,30 @@ import (
 	"testing"
 )
 
+func TestNoCmuxReferences(t *testing.T) {
+	entries, err := os.ReadDir(".")
+	if err != nil {
+		t.Fatalf("failed to read package dir: %v", err)
+	}
+	forbidden := []byte{'c', 'm', 'u', 'x'}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".go") || strings.HasSuffix(name, "_test.go") {
+			continue
+		}
+		data, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatalf("failed to read %s: %v", name, err)
+		}
+		if strings.Contains(string(data), string(forbidden)) {
+			t.Errorf("%s contains a forbidden reference; worktree package must stay free of that dependency", name)
+		}
+	}
+}
+
 func setupGitRepo(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()

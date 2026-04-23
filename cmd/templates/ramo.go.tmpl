@@ -1,0 +1,67 @@
+//go:build ramo
+
+// Run this file with: go run ./ramo.go
+//
+// It uses the ramo library to orchestrate parallel AI coding agents across
+// isolated git worktrees. Edit the Config below to declare your worktrees
+// and the pipeline of steps each should run.
+package main
+
+import (
+	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/mateusduraes/ramo/observability"
+	"github.com/mateusduraes/ramo/orchestrator"
+	"github.com/mateusduraes/ramo/sandbox/docker"
+)
+
+func main() {
+	sandbox, err := docker.New(docker.Config{
+		Dockerfile: ".ramo/Dockerfile",
+	})
+	if err != nil {
+		log.Fatalf("docker sandbox: %v", err)
+	}
+
+	cfg := orchestrator.Config{
+		Sandbox:     sandbox,
+		IdleTimeout: 10 * time.Minute,
+		Consumers: []observability.Consumer{
+			observability.NewStdoutConsumer(),
+			observability.NewFileLogger(".ramo"),
+			observability.NewSummaryBuilder(".ramo"),
+		},
+		Worktrees: []orchestrator.Worktree{
+			{
+				Branch: "feat/example",
+				Setup:  []string{"pnpm install"},
+				Steps: []orchestrator.Step{
+					{
+						Name:          "implement",
+						PromptFile:    ".ramo/implement.prompt.md",
+						MaxIterations: 10,
+						DoneSignal:    "<ramo>DONE</ramo>",
+					},
+					{
+						Name:       "open-pr",
+						PromptFile: ".ramo/open-pr.prompt.md",
+						RunOn:      orchestrator.Host,
+					},
+				},
+			},
+		},
+	}
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	if err := orchestrator.Run(ctx, cfg); err != nil {
+		log.Printf("run failed: %v", err)
+		os.Exit(1)
+	}
+}

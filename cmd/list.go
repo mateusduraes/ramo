@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/mateusduraes/ramo/config"
 	"github.com/mateusduraes/ramo/worktree"
 	"github.com/spf13/cobra"
 )
@@ -18,12 +17,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 
-		cfg, err := config.Load(dir)
-		if err != nil {
-			return err
-		}
-
-		worktreesDir := filepath.Join(dir, cfg.WorktreesDir)
+		worktreesDir := filepath.Join(dir, defaultWorktreesDir)
 
 		entries, err := worktree.List(dir, worktreesDir)
 		if err != nil {

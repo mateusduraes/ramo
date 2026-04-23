@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/manifoldco/promptui"
-	"github.com/mateusduraes/ramo/worktree"
 	"github.com/spf13/cobra"
 )
 
+const defaultWorktreesDir = ".worktrees"
+
 var rootCmd = &cobra.Command{
 	Use:   "ramo",
-	Short: "A git worktree manager with cmux integration",
+	Short: "Orchestrate parallel AI coding agents across git worktrees",
 }
 
 func Execute() {
@@ -27,32 +27,4 @@ func getWorkingDir() (string, error) {
 		return "", fmt.Errorf("failed to get working directory: %w", err)
 	}
 	return dir, nil
-}
-
-func selectWorktree(repoDir, worktreesDir string) (string, error) {
-	entries, err := worktree.List(repoDir, worktreesDir)
-	if err != nil {
-		return "", fmt.Errorf("failed to list worktrees: %w", err)
-	}
-
-	if len(entries) == 0 {
-		return "", fmt.Errorf("no worktrees found")
-	}
-
-	branches := make([]string, len(entries))
-	for i, e := range entries {
-		branches[i] = e.Branch
-	}
-
-	prompt := promptui.Select{
-		Label: "Select a worktree",
-		Items: branches,
-	}
-
-	_, selected, err := prompt.Run()
-	if err != nil {
-		return "", fmt.Errorf("selection cancelled")
-	}
-
-	return selected, nil
 }
